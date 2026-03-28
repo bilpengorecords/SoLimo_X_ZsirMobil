@@ -1,64 +1,62 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+const canvas = document.getElementById("three-canvas");
 
+// Scene
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
 
+// Camera
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
+camera.position.set(0, 1, 3);
 
+// Renderer
 const renderer = new THREE.WebGLRenderer({
-  canvas: document.getElementById("three-canvas"),
+  canvas: canvas,
   antialias: true
 });
-
 renderer.setSize(window.innerWidth, window.innerHeight);
-camera.position.z = 3;
+renderer.setPixelRatio(window.devicePixelRatio);
 
-// fények
-const light = new THREE.AmbientLight(0xffffff, 1);
+// Controls (drag rotate)
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Light
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 5, 5);
 scene.add(light);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5);
-scene.add(directionalLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
-// GLB loader
-const loader = new GLTFLoader();
+// Load GLB
+const loader = new THREE.GLTFLoader();
 
-let model;
+loader.load("model.glb", function (gltf) {
+  const model = gltf.scene;
+  scene.add(model);
 
-loader.load(
-  "model.glb",
-  function (gltf) {
-    model = gltf.scene;
-    scene.add(model);
-  },
-  undefined,
-  function (error) {
-    console.error(error);
-  }
-);
+  // középre igazítás
+  model.position.set(0, 0, 0);
+}, undefined, function (error) {
+  console.error(error);
+});
 
-// animáció (forgatás)
-function animate() {
-  requestAnimationFrame(animate);
-
-  if (model) {
-    model.rotation.y += 0.01;
-  }
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-// resize fix
+// Resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Animate
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
